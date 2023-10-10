@@ -66,6 +66,11 @@ app.get('/categories', (req, res) => {
         res.send("message", error)
     });  
 });
+
+app.get(' /posts/add', (req, res) => {
+    res.sendFile(path.join(__dirname, "/views/addPost.html"));
+})
+
 // all routes 
 app.get('*', function (req, res) {
     res.send('Page Not Found');
