@@ -46,7 +46,16 @@ module.exports.getCategories = () =>
     });
 }; 
 
-
+module.exports.addPost(postData) = () =>
+{
+  return new Promise((resolve, reject) => {
+    if(postData.published === undefined) postData.published = false; 
+    else postData.published = true; 
+    postData.id = posts.length() + 1; 
+    posts.push(postData);
+    resolve();  
+  })
+}
 
 
 

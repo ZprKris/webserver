@@ -14,7 +14,18 @@ const blogService = require('./blog-service');
 const express = require('express');
 const path = require("path");
 const app = express();
-
+// 
+const multer = require("multer");
+const cloudinary = require('cloudinary').v2
+const streamifier = require('streamifier')
+cloudinary.config({
+    cloud_name: 'dggs1k1vk',
+    api_key: '781132277325654',
+    api_secret: 'aG64Q7089Opw6zGNr-POkBpeSuU',
+    secure: true
+});
+const upload = multer(); // no { storage: storage } since we are not using disk storage
+// 
 const HTTP_PORT = process.env.PORT || 8080;
 
 // if initialize() is successful then listen. if not then print error to the console 
@@ -66,14 +77,47 @@ app.get('/categories', (req, res) => {
         res.send("message", error)
     });  
 });
-
-app.get(' /posts/add', (req, res) => {
+// posts/add route 
+app.get('/posts/add', (req, res) => {
     res.sendFile(path.join(__dirname, "/views/addPost.html"));
-})
+});
 
 // all routes 
 app.get('*', function (req, res) {
     res.send('Page Not Found');
-})
+});
 
+// post to /posts/add
+app.post('/posts/add', (req, res) => {
+
+    let streamUpload = (req) => {
+        return new Promise((resolve, reject) => {
+            let stream = cloudinary.uploader.upload_stream(
+                (error, result) => {
+                if (result) {
+                    resolve(result);
+                } else {
+                    reject(error);
+                }
+                }
+            );
+    
+            streamifier.createReadStream(req.file.buffer).pipe(stream);
+        });
+    };
+    
+    async function upload(req) {
+        let result = await streamUpload(req);
+        console.log(result);
+        return result;
+    }
+    
+    upload(req).then((uploaded)=>{
+        req.body.featureImage = uploaded.url;
+         
+        // TODO: Process the req.body and add it as a new Blog Post before redirecting to /posts
+        blogService.addPost(req.body).then(() => {res.redirect('/posts');});
+    });
+    
+});
 
