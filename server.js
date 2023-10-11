@@ -16,8 +16,6 @@ const path = require("path");
 const app = express();
 // 
 const multer = require("multer");
-// const storage = multer.memoryStorage(); // Using memory storage for buffering
-// const upload = multer({ storage: storage });
 const cloudinary = require('cloudinary').v2;
 const streamifier = require('streamifier');
 cloudinary.config({
@@ -103,7 +101,6 @@ app.post('/posts/add', upload.single('featureImage'), (req, res) => {
                 }
                 }
             );
-            console.log(req.body);
             streamifier.createReadStream(req.file.buffer).pipe(stream);
         });
     };
