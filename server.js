@@ -57,6 +57,16 @@ app.get('/blog', (req, res) => {
         res.send("message", error)
     });
  });
+// new route
+app.get('/post/:postId', (req, res) => {
+    if(req.params.postId) 
+        blogService.getPostById(req.params.postId).then((post) => 
+        {
+            res.json(post); 
+        }).catch((error) => {
+            res.status(500).json({ message: 'An error: ', error });
+        })
+})
 // posts route 
 app.get('/posts', (req, res) => {
     // queries:
@@ -67,27 +77,27 @@ app.get('/posts', (req, res) => {
             res.json(posts)
         }).catch((error) => 
         {   
-            res.status(500).json({ message: 'An error occurred', error });
+            res.status(500).json({ message: 'An error: ', error });
         });
     } 
-    else if(req.query.postDate)
+    else if(req.query.minDate)
     {
-        blogService.getPostsByMinDate(req.query.postDate).then((posts) => 
+        blogService.getPostsByMinDate(req.query.minDate).then((posts) => 
         { 
             res.json(posts);
         }).catch((error) => 
         {
-         res.status(500).json({ message: 'An error occurred', error });
+         res.status(500).json({ message: 'An error: ', error });
         });
     }
-    else 
+    else // get all 
     {
         blogService.getAllPosts().then((posts) => 
         {
             res.send(posts);
         }).catch((error)=>
         {
-           res.status(500).json({ message: 'An error occurred', error });
+           res.status(500).json({ message: 'An error: ', error });
         });
     }
 });
