@@ -57,6 +57,57 @@ module.exports.addPost = (postData) =>
   })
 }
 
+module.exports.getPostsByCategory = (category) => 
+{
+  return new Promise ((resolve, reject) => 
+  {
+    res = []; 
+    for(let i = 0; i < posts.length; ++i)
+    {
+      if(posts[i].category === category)
+        res.push(posts[i]); 
+    }
+    if(res.length) resolve(res); 
+    else reject('no results returned');
+  })
+}
+
+module.exports.getPostsByMinDate = (minDateStr) => 
+{
+  return new Promise((resolve, reject) => 
+  {
+    res = []; 
+    for(let i = 0; i < posts.length; ++i)
+    {
+      if(new Date(posts[i].postDate) >= new Date(minDateStr))
+        res.push(posts[i]); 
+    }
+    if(res.length) resolve(res); 
+    else reject('no results returned'); 
+  })
+}
+
+module.exports.getPostById = (id) => 
+{
+  return new Promise((resolve, reject) => 
+  {
+    let flag = false; 
+    let res = {}; 
+
+    for(let i = 0; i < posts.length; ++i)
+    {
+      if(id === posts[i].id) 
+      {
+        flag = true; 
+        res = posts[i];
+        break; 
+      }
+    }
+
+    if(flag) resolve(res); 
+    else reject('no result returned')
+  })
+}
 
 
 

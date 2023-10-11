@@ -59,13 +59,30 @@ app.get('/blog', (req, res) => {
  });
 // posts route 
 app.get('/posts', (req, res) => {
-blogService.getAllPosts().then((posts) => 
+    // queries:
+    console.log(req.query.category);
+
+    let maxCatNum = 5; 
+    for(i = 0; i < maxCatNum; ++i)
     {
-        res.send(posts);
-    }).catch((error)=>
-    {
-        res.send("message", error)
-    });
+        if(req.query.category == i)
+        {
+            console.log(req.query.category);
+            res.json(blogService.getPostsByCategory(i))
+            break;
+        }
+    }
+    let date = new Date('0000-00-00');
+    if(req.query.postDate > date)
+        res.json(blogService.getPostsByMinDate(date));
+    
+    blogService.getAllPosts().then((posts) => 
+        {
+            res.send(posts);
+        }).catch((error)=>
+        {
+            res.send("message", error)
+        });
 });
 // categories route 
 app.get('/categories', (req, res) => {
