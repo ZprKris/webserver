@@ -16,8 +16,8 @@ const path = require("path");
 const app = express();
 // 
 const multer = require("multer");
-const storage = multer.memoryStorage();
-const upload = multer({ storage: storage });
+// const storage = multer.memoryStorage(); // Using memory storage for buffering
+// const upload = multer({ storage: storage });
 const cloudinary = require('cloudinary').v2;
 const streamifier = require('streamifier');
 cloudinary.config({
@@ -26,7 +26,8 @@ cloudinary.config({
     api_secret: 'aG64Q7089Opw6zGNr-POkBpeSuU',
     secure: true
 });
-// 
+const upload = multer(); // no { storage: storage } since we are not using disk storage
+
 const HTTP_PORT = process.env.PORT || 8080;
 
 // if initialize() is successful then listen. if not then print error to the console 
@@ -89,7 +90,7 @@ app.get('*', function (req, res) {
 });
 
 // post to /posts/add
-app.post('/posts/add', upload.single("featureImage"), (req, res) => {
+app.post('/posts/add', upload.single('featureImage'), (req, res) => {
 
     let streamUpload = (req) => {
         return new Promise((resolve, reject) => {
@@ -102,7 +103,7 @@ app.post('/posts/add', upload.single("featureImage"), (req, res) => {
                 }
                 }
             );
-    
+            console.log(req.body);
             streamifier.createReadStream(req.file.buffer).pipe(stream);
         });
     };
