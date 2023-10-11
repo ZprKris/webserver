@@ -16,15 +16,16 @@ const path = require("path");
 const app = express();
 // 
 const multer = require("multer");
-const cloudinary = require('cloudinary').v2
-const streamifier = require('streamifier')
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
+const cloudinary = require('cloudinary').v2;
+const streamifier = require('streamifier');
 cloudinary.config({
     cloud_name: 'dggs1k1vk',
     api_key: '781132277325654',
     api_secret: 'aG64Q7089Opw6zGNr-POkBpeSuU',
     secure: true
 });
-const upload = multer(); // no { storage: storage } since we are not using disk storage
 // 
 const HTTP_PORT = process.env.PORT || 8080;
 
@@ -88,7 +89,7 @@ app.get('*', function (req, res) {
 });
 
 // post to /posts/add
-app.post('/posts/add', (req, res) => {
+app.post('/posts/add', upload.single("featureImage"), (req, res) => {
 
     let streamUpload = (req) => {
         return new Promise((resolve, reject) => {
