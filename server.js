@@ -66,11 +66,20 @@ app.get('/posts', (req, res) => {
         {
             res.json(posts)
         }).catch((error) => 
-        {res.send("message", error)});
+        {   
+            res.status(500).json({ message: 'An error occurred', error });
+        });
     } 
     else if(req.query.postDate)
-        blogService.getPostsByMinDate(req.query.postDate).then((posts) =>
-        { res.json(posts)}).catch((error) => {res.send("message", error)});
+    {
+        blogService.getPostsByMinDate(req.query.postDate).then((posts) => 
+        { 
+            res.json(posts);
+        }).catch((error) => 
+        {
+         res.status(500).json({ message: 'An error occurred', error });
+        });
+    }
     else 
     {
         blogService.getAllPosts().then((posts) => 
@@ -78,7 +87,7 @@ app.get('/posts', (req, res) => {
             res.send(posts);
         }).catch((error)=>
         {
-            res.send("message", error)
+           res.status(500).json({ message: 'An error occurred', error });
         });
     }
 });

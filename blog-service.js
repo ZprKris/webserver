@@ -64,7 +64,7 @@ module.exports.getPostsByCategory = (category) =>
     res = []; 
     for(let i = 0; i < posts.length; ++i)
     {
-      if(posts[i].category === category)
+      if(posts[i].category == category)
         res.push(posts[i]); 
     }
     if(res.length) resolve(res); 
@@ -79,7 +79,7 @@ module.exports.getPostsByMinDate = (minDateStr) =>
     res = []; 
     for(let i = 0; i < posts.length; ++i)
     {
-      if(new Date(posts[i].postDate) >= new Date(minDateStr))
+      if(new Date(posts[i].postDate) > new Date(minDateStr))
         res.push(posts[i]); 
     }
     if(res.length) resolve(res); 
@@ -96,7 +96,7 @@ module.exports.getPostById = (id) =>
 
     for(let i = 0; i < posts.length; ++i)
     {
-      if(id === posts[i].id) 
+      if(id == posts[i].id) 
       {
         flag = true; 
         res = posts[i];
