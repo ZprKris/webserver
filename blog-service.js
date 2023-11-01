@@ -52,6 +52,14 @@ module.exports.addPost = (postData) =>
     if(postData.published === undefined) postData.published = false; 
     else postData.published = true; 
     postData.id = posts.length + 1; 
+    postData.postDate = new Date(); 
+
+    const currentDate = new Date();
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth() + 1;
+    const day = currentDate.getDate(); 
+    postData.postDate = String(year) + "-" + String(month) + String(day); 
+
     posts.push(postData);
     resolve();  
   })
@@ -109,9 +117,41 @@ module.exports.getPostById = (id) =>
   })
 }
 
+module.exports.getPublishedPostsByCategory = (category) =>
+{
+  return new Promise((resolve, reject) => 
+  {
+    let res = []; 
 
+    for(let i = 0; i < posts.length; ++i)
+    {
+      if(posts[i].published && posts[i].category == category) 
+      {
+        res.push(posts[i]);
+      }
+    }
+    if(res.length > 0) resolve(res); 
+    else reject('no result returned')
+  })
+}
 
+module.exports.getPublishedPosts = () =>
+{
+  return new Promise((resolve, reject) => 
+  {
+    let res = []; 
 
+    for(let i = 0; i < posts.length; ++i)
+    {
+      if(posts[i].published) 
+      {
+        res.push(posts[i]);
+      }
+    }
+    if(res.length > 0) resolve(res); 
+    else reject('no result returned')
+  })
+}
 
 
 

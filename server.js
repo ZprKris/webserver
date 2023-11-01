@@ -1,23 +1,29 @@
 /*********************************************************************************
-* BTI325 – Assignment 02
+* BTI325 – Assignment 04
 * I declare that this assignment is my own work in accordance with Seneca Academic Policy. No part
 * of this assignment has been copied manually or electronically from any other source
 * (including 3rd party web sites) or distributed to other students.
 *
-* Name: Kristina Zaporozhets Student ID: 128930229 Date: 10/10/2023
+* Name: Kristina Zaporozhets Student ID: 128930229 Date: 11/1/2023
 *
 * Online (Cyclic) Link: https://long-gold-gear.cyclic.cloud/
 *
 ********************************************************************************/ 
-
-const blogService = require('./blog-service');
+const blogData = require('./blog-service');
 const express = require('express');
 const path = require("path");
 const app = express();
-// 
+// ass4
+const Handlebars = require('handlebars');
+const stripJs = require('strip-js');
+const exphbs = require("express-handlebars" ); 
+app.engine('.hbs', exphbs.engine({ extname: '.hbs', defaultLayout: "main"}));
+app.set('view engine', '.hbs');
+// ass2
 const multer = require("multer");
 const cloudinary = require('cloudinary').v2;
 const streamifier = require('streamifier');
+const { ExpressHandlebars } = require('express-handlebars');
 cloudinary.config({
     cloud_name: 'dggs1k1vk',
     api_key: '781132277325654',
@@ -25,11 +31,32 @@ cloudinary.config({
     secure: true
 });
 const upload = multer(); // no { storage: storage } since we are not using disk storage
+// ass4: handlebars 
+Handlebars.registerHelper('navLink', function (url, options) {
+    return '<li' + 
+        ((url == app.locals.activeRoute) ? ' class="active" ' : '') + 
+        '><a href="' + url + '">' + options.fn(this) + '</a></li>';
+});
+
+Handlebars.registerHelper('equal', function (lvalue, rvalue, options) {
+    if (arguments.length < 3)
+        throw new Error("Handlebars Helper equal needs 2 parameters");
+    if (lvalue != rvalue) {
+        return options.inverse(this);
+    } else {
+        return options.fn(this);
+    }
+
+});
+
+Handlebars.registerHelper('safeHTML', function(context){
+    return stripJs(context);
+});
 
 const HTTP_PORT = process.env.PORT || 8080;
 
 // if initialize() is successful then listen. if not then print error to the console 
-blogService.initialize().then(() => 
+blogData.initialize().then(() => 
 {
     app.listen(HTTP_PORT, () => { console.log(`server listening on: ${HTTP_PORT}`) });
 }).catch((error) =>
@@ -39,28 +66,74 @@ blogService.initialize().then(() =>
 
 app.use(express.static("public"));
 
+// ass4: midleware for nav bar active highlight 
+app.use(function(req,res,next){
+    let route = req.path.substring(1);
+    app.locals.activeRoute = "/" + (isNaN(route.split('/')[1]) ? route.replace(/\/(?!.*)/, "") : route.replace(/\/(.*)/, ""));
+    app.locals.viewingCategory = req.query.category;
+    next();
+});
+
 // / route 
 app.get('/', (req, res) => {
-    res.redirect('/about');
+    res.redirect('/blog');
 });
 // about route 
 app.get('/about', (req, res) => {
-  res.sendFile(path.join(__dirname, "/views/about.html"));
+  res.render(path.join(__dirname, "/views/about"));
 });
-// blog route 
-app.get('/blog', (req, res) => {
-    blogService.getAllPosts().then((posts) => 
-    {
-        res.send(posts);
-    }).catch((error)=>
-    {
-        res.send("message", error)
-    });
- });
-// new route
+// ass4: blog route: provided 
+app.get('/blog', async (req, res) => {
+
+    // Declare an object to store properties for the view
+    let viewData = {};
+
+    try{
+
+        // declare empty array to hold "post" objects
+        let posts = [];
+
+        // if there's a "category" query, filter the returned posts by category
+        if(req.query.category){
+            // Obtain the published "posts" by category
+            posts = await blogData.getPublishedPostsByCategory(req.query.category);
+        }else{
+            // Obtain the published "posts"
+            posts = await blogData.getPublishedPosts();
+        }
+
+        // sort the published posts by postDate
+        posts.sort((a,b) => new Date(b.postDate) - new Date(a.postDate));
+
+        // get the latest post from the front of the list (element 0)
+        let post = posts[0]; 
+
+        // store the "posts" and "post" data in the viewData object (to be passed to the view)
+        viewData.posts = posts;
+        viewData.post = post;
+
+    }catch(err){
+        viewData.message = "no results";
+    }
+
+    try{
+        // Obtain the full list of "categories"
+        let categories = await blogData.getCategories();
+
+        // store the "categories" data in the viewData object (to be passed to the view)
+        viewData.categories = categories;
+    }catch(err){
+        viewData.categoriesMessage = "no results"
+    }
+
+    // render the "blog" view with all of the data (viewData)
+    res.render("blog", {data: viewData})
+
+});
+// ass4: post by id route 
 app.get('/post/:postId', (req, res) => {
     if(req.params.postId) 
-        blogService.getPostById(req.params.postId).then((post) => 
+        blogData.getPostById(req.params.postId).then((post) => 
         {
             res.json(post); 
         }).catch((error) => {
@@ -72,9 +145,9 @@ app.get('/posts', (req, res) => {
     // queries:
     if(req.query.category)
     {
-        blogService.getPostsByCategory(req.query.category).then((posts) =>
+        blogData.getPostsByCategory(req.query.category).then((posts) =>
         {
-            res.json(posts)
+            res.render("posts", {posts: posts})
         }).catch((error) => 
         {   
             res.status(500).json({ message: 'An error: ', error });
@@ -82,9 +155,9 @@ app.get('/posts', (req, res) => {
     } 
     else if(req.query.minDate)
     {
-        blogService.getPostsByMinDate(req.query.minDate).then((posts) => 
+        blogData.getPostsByMinDate(req.query.minDate).then((posts) => 
         { 
-            res.json(posts);
+            res.render("posts", {posts: posts})
         }).catch((error) => 
         {
          res.status(500).json({ message: 'An error: ', error });
@@ -92,9 +165,9 @@ app.get('/posts', (req, res) => {
     }
     else // get all 
     {
-        blogService.getAllPosts().then((posts) => 
+        blogData.getAllPosts().then((posts) => 
         {
-            res.send(posts);
+            res.render("posts", {posts: posts})
         }).catch((error)=>
         {
            res.status(500).json({ message: 'An error: ', error });
@@ -103,22 +176,18 @@ app.get('/posts', (req, res) => {
 });
 // categories route 
 app.get('/categories', (req, res) => {
-    blogService.getCategories().then((categories) => 
+    blogData.getCategories().then((categories) => 
     {
-        res.send(categories);
+        res.render("categories", {categories: categories});
     }).catch((error)=>
     {
+        res.render("categories", {message: "no results"});
         res.send("message", error)
     });  
 });
 // posts/add route 
 app.get('/posts/add', (req, res) => {
-    res.sendFile(path.join(__dirname, "/views/addPost.html"));
-});
-
-// all routes 
-app.get('*', function (req, res) {
-    res.send('Page Not Found');
+    res.render(path.join(__dirname, "/views/addPost"));
 });
 
 // post to /posts/add
@@ -141,16 +210,70 @@ app.post('/posts/add', upload.single('featureImage'), (req, res) => {
     
     async function upload(req) {
         let result = await streamUpload(req);
-        console.log(result);
         return result;
-    }
+    };
     
     upload(req).then((uploaded)=>{
         req.body.featureImage = uploaded.url;
-         
         // TODO: Process the req.body and add it as a new Blog Post before redirecting to /posts
-        blogService.addPost(req.body).then(() => {res.redirect('/posts');});
+        blogData.addPost(req.body).then(() => {res.redirect('/posts');});
     });
     
 });
 
+// ass4 provided route for blogs 
+app.get('/blog/:id', async (req, res) => {
+
+    // Declare an object to store properties for the view
+    let viewData = {};
+
+    try{
+
+        // declare empty array to hold "post" objects
+        let posts = [];
+
+        // if there's a "category" query, filter the returned posts by category
+        if(req.query.category){
+            // Obtain the published "posts" by category
+            posts = await blogData.getPublishedPostsByCategory(req.query.category);
+        }else{
+            // Obtain the published "posts"
+            posts = await blogData.getPublishedPosts();
+        }
+
+        // sort the published posts by postDate
+        posts.sort((a,b) => new Date(b.postDate) - new Date(a.postDate));
+
+        // store the "posts" and "post" data in the viewData object (to be passed to the view)
+        viewData.posts = posts;
+
+    }catch(err){
+        viewData.message = "no results";
+    }
+
+    try{
+        // Obtain the post by "id"
+        viewData.post = await blogData.getPostById(req.params.id);
+    }catch(err){
+        viewData.message = "no results"; 
+    }
+
+    try{
+        // Obtain the full list of "categories"
+        let categories = await blogData.getCategories();
+
+        // store the "categories" data in the viewData object (to be passed to the view)
+        viewData.categories = categories;
+    }catch(err){
+        viewData.categoriesMessage = "no results"
+    }
+
+    // render the "blog" view with all of the data (viewData)
+    res.render("blog", {data: viewData})
+});
+
+app.get('/*', (req, res) => {
+    res.render(path.join(__dirname, "/views/404")); 
+  }); 
+
+  

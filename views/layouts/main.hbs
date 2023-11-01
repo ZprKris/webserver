@@ -7,7 +7,7 @@
       <!-- Latest compiled and minified Bootstrap 3.4.1 CSS -->
       <link rel="stylesheet" href="https://bootswatch.com/3/superhero/bootstrap.min.css" />
       <link rel="stylesheet" href="/css/main.css">
-      <title>About</title>
+      <title>Kristina Zaporozhets's Blog</title>
   </head>
   <body>
     <nav class="navbar navbar-default navbar-fixed-top">
@@ -26,32 +26,19 @@
         <!-- Collect the nav links, forms, and other content for toggling -->
         <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
           <ul class="nav navbar-nav">
-            <li><a href="/blog">Blog</a></li>
-            <li class="active"><a href="/about">About</a></li>
+            <li>{{#navLink "/blog"}}Blog{{/navLink}}</li>
+            <li class="active">{{#navLink "/about"}}About{{/navLink}}</li>
           </ul>
           <ul class="nav navbar-nav navbar-right">
-            <li><a href="/posts">Posts</a></li>
-            <li><a href="/categories">Categories</a></li>
-            <li><a href="/posts/add">Add Post</a></li>           
+            <li>{{#navLink "/posts"}}Posts{{/navLink}}</li>
+            <li>{{#navLink "/categories"}}Categories{{/navLink}}</li>
+            <li>{{#navLink "/posts/add"}}Add Post{{/navLink}}</li>           
           </ul>
         </div><!-- /.navbar-collapse -->
       </div><!-- /.container-fluid -->
     </nav>
     <div class="container" style="padding-top:60px">
-      <div class="row">
-        <section class="main col-md-9">
-          <article>
-          <h2>About</h2>
-          <p>I am a 19-year-old from Ukraine and I am currently studying Software Development at Seneca. </p>
-          <p>I have been programming since I was 15 years old and I absolutely love it. I also have some experience in Algorithms and Data structures.</p>
-          <p>I'm now eager to explore different IT spheres and excited about advancing in my career </p>
-          </article>
-        </section>
-        <aside class="col-md-3">
-          <h2>Coming Soon</h2>
-          <p>Stay tuned for future updates…</p>
-        </aside>
-      </div>
+        {{{body}}}
     </div>
 
     <!-- Latest compiled and minified jQuery 3.6.0 JavaScript -->
@@ -61,3 +48,5 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha384-aJ21OjlMXNL5UyIl/XNwTMqvzeRMZH2w8c5cRVpzpU8Y5bApTppSuUkhZXN0VxHd" crossorigin="anonymous"></script>
   </body>
 </html>
+
+
