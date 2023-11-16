@@ -6,7 +6,7 @@
 *
 * Name: Kristina Zaporozhets Student ID: 128930229 Date: 11/1/2023
 *
-* Online (Cyclic) Link: https://long-gold-gear.cyclic.cloud/
+* Online (Cyclic) Link: https://busy-yak-kilt.cyclic.app/
 *
 ********************************************************************************/ 
 const blogData = require('./blog-service');
@@ -53,6 +53,14 @@ Handlebars.registerHelper('safeHTML', function(context){
     return stripJs(context);
 });
 
+Handlebars.registerHelper('FormatDate', function(dateObj){
+    let year = dateObj.getFullYear();
+    let month = (dateObj.getMonth() + 1).toString();
+    let day = dateObj.getDate().toString();
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2,'0')}`;
+})
+
+
 const HTTP_PORT = process.env.PORT || 8080;
 
 // if initialize() is successful then listen. if not then print error to the console 
@@ -65,6 +73,7 @@ blogData.initialize().then(() =>
 })
 
 app.use(express.static("public"));
+app.use(express.urlencoded({extended: true}));
 
 // ass4: midleware for nav bar active highlight 
 app.use(function(req,res,next){
@@ -147,7 +156,10 @@ app.get('/posts', (req, res) => {
     {
         blogData.getPostsByCategory(req.query.category).then((posts) =>
         {
-            res.render("posts", {posts: posts})
+            if(posts.length > 0)
+                res.render("posts", {posts: posts})
+            else 
+                res.render("posts",{ message: "no results" });
         }).catch((error) => 
         {   
             res.status(500).json({ message: 'An error: ', error });
@@ -157,7 +169,10 @@ app.get('/posts', (req, res) => {
     {
         blogData.getPostsByMinDate(req.query.minDate).then((posts) => 
         { 
-            res.render("posts", {posts: posts})
+            if(posts.length > 0)
+                res.render("posts", {posts: posts})
+            else 
+                res.render("posts",{ message: "no results" });
         }).catch((error) => 
         {
          res.status(500).json({ message: 'An error: ', error });
@@ -167,7 +182,10 @@ app.get('/posts', (req, res) => {
     {
         blogData.getAllPosts().then((posts) => 
         {
-            res.render("posts", {posts: posts})
+            if(posts.length > 0)
+                res.render("posts", {posts: posts})
+            else 
+                res.render("posts",{ message: "no results" });            
         }).catch((error)=>
         {
            res.status(500).json({ message: 'An error: ', error });
@@ -178,16 +196,30 @@ app.get('/posts', (req, res) => {
 app.get('/categories', (req, res) => {
     blogData.getCategories().then((categories) => 
     {
-        res.render("categories", {categories: categories});
+        if(categories.length > 0)
+            res.render("categories", {categories: categories});
+        else 
+            res.render("categories",{ message: "no results" });            
     }).catch((error)=>
     {
         res.render("categories", {message: "no results"});
         res.send("message", error)
     });  
 });
+
+app.get('/categories/add', (req, res) => {
+    res.render(path.join(__dirname, "/views/addCategory"));
+});
+
 // posts/add route 
 app.get('/posts/add', (req, res) => {
-    res.render(path.join(__dirname, "/views/addPost"));
+    blogData.getCategories().then((categories) => 
+    {
+        res.render("addPost", {categories: categories});
+    }).catch(()=>
+    {
+        res.render("addPost", {categories: []});
+    })
 });
 
 // post to /posts/add
@@ -213,12 +245,37 @@ app.post('/posts/add', upload.single('featureImage'), (req, res) => {
         return result;
     };
     
+    
     upload(req).then((uploaded)=>{
         req.body.featureImage = uploaded.url;
         // TODO: Process the req.body and add it as a new Blog Post before redirecting to /posts
         blogData.addPost(req.body).then(() => {res.redirect('/posts');});
     });
     
+});
+
+app.post('/categories/add', (req, res) => {
+    blogData.addCategory(req.body).then(() => {res.redirect('/categories');});
+});
+
+app.get('/categories/delete/:id', (req, res) => {
+    if(req.params.id) 
+    blogData.deleteCategoryById(req.params.id).then((category) => 
+    {
+        res.redirect('/categories');
+    }).catch((error) => {
+        res.status(500).send('Unable to Remove Category / Category not found');
+    })
+});
+
+app.get('/posts/delete/:id', (req, res) => {
+    if(req.params.id) 
+    blogData.deletePostById(req.params.id).then((category) => 
+    {
+        res.redirect('/posts');
+    }).catch((error) => {
+        res.status(500).send('Unable to Remove Post / Post not found');
+    })
 });
 
 // ass4 provided route for blogs 
