@@ -4,9 +4,9 @@
 * of this assignment has been copied manually or electronically from any other source
 * (including 3rd party web sites) or distributed to other students.
 *
-* Name: Kristina Zaporozhets Student ID: 128930229 Date: 11/1/2023
+* Name: Kristina Zaporozhets Student ID: 128930229 Date: 11/16/2023
 *
-* Online (Cyclic) Link: https://busy-yak-kilt.cyclic.app/
+* Online (Cyclic) Link: https://easy-rose-snail-slip.cyclic.app
 *
 ********************************************************************************/ 
 const blogData = require('./blog-service');
