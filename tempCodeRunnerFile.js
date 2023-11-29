@@ -1,1 +1,1 @@
-getPostsByCategory
+        console.log(888);

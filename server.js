@@ -4,11 +4,13 @@
 * of this assignment has been copied manually or electronically from any other source
 * (including 3rd party web sites) or distributed to other students.
 *
-* Name: Kristina Zaporozhets Student ID: 128930229 Date: 11/16/2023
+* Name: Kristina Zaporozhets Student ID: 128930229 Date: 11/29/2023
 *
 * Online (Cyclic) Link: https://easy-rose-snail-slip.cyclic.app
 *
 ********************************************************************************/ 
+const clientSessions = require("client-sessions"); // ass6
+const authData = require("./auth-service")
 const blogData = require('./blog-service');
 const express = require('express');
 const path = require("path");
@@ -60,11 +62,35 @@ Handlebars.registerHelper('FormatDate', function(dateObj){
     return `${year}-${month.padStart(2, '0')}-${day.padStart(2,'0')}`;
 })
 
+// ass6
+app.use(
+    clientSessions({
+      cookieName: 'session', // this is the object name that will be added to 'req'
+      secret: 'o6LjQ5EVNC28ZgK64hDELM18ScpFQr', // this should be a long un-guessable string.
+      duration: 2 * 60 * 1000, // duration of the session in milliseconds (2 minutes)
+      activeDuration: 1000 * 60, // the session will be extended by this many ms each request (1 minute)
+    })
+  );
+
+app.use(function(req, res, next) {
+    res.locals.session = req.session;
+    next();
+});
+  
+function ensureLogin(req, res, next) {
+    if (!req.session.user) {
+        res.redirect('/login');
+    } else {
+        next();
+    }
+}
 
 const HTTP_PORT = process.env.PORT || 8080;
 
 // if initialize() is successful then listen. if not then print error to the console 
-blogData.initialize().then(() => 
+blogData.initialize()
+.then(authData.initialize)
+.then(() => 
 {
     app.listen(HTTP_PORT, () => { console.log(`server listening on: ${HTTP_PORT}`) });
 }).catch((error) =>
@@ -140,7 +166,7 @@ app.get('/blog', async (req, res) => {
 
 });
 // ass4: post by id route 
-app.get('/post/:postId', (req, res) => {
+app.get('/post/:postId', ensureLogin, (req, res) => {
     if(req.params.postId) 
         blogData.getPostById(req.params.postId).then((post) => 
         {
@@ -150,7 +176,7 @@ app.get('/post/:postId', (req, res) => {
         })
 })
 // posts route 
-app.get('/posts', (req, res) => {
+app.get('/posts', ensureLogin, (req, res) => {
     // queries:
     if(req.query.category)
     {
@@ -193,7 +219,7 @@ app.get('/posts', (req, res) => {
     }
 });
 // categories route 
-app.get('/categories', (req, res) => {
+app.get('/categories', ensureLogin, (req, res) => {
     blogData.getCategories().then((categories) => 
     {
         if(categories.length > 0)
@@ -207,12 +233,12 @@ app.get('/categories', (req, res) => {
     });  
 });
 
-app.get('/categories/add', (req, res) => {
+app.get('/categories/add', ensureLogin, (req, res) => {
     res.render(path.join(__dirname, "/views/addCategory"));
 });
 
 // posts/add route 
-app.get('/posts/add', (req, res) => {
+app.get('/posts/add', ensureLogin, (req, res) => {
     blogData.getCategories().then((categories) => 
     {
         res.render("addPost", {categories: categories});
@@ -223,7 +249,7 @@ app.get('/posts/add', (req, res) => {
 });
 
 // post to /posts/add
-app.post('/posts/add', upload.single('featureImage'), (req, res) => {
+app.post('/posts/add', ensureLogin, upload.single('featureImage'), (req, res) => {
 
     let streamUpload = (req) => {
         return new Promise((resolve, reject) => {
@@ -254,11 +280,11 @@ app.post('/posts/add', upload.single('featureImage'), (req, res) => {
     
 });
 
-app.post('/categories/add', (req, res) => {
+app.post('/categories/add', ensureLogin, (req, res) => {
     blogData.addCategory(req.body).then(() => {res.redirect('/categories');});
 });
 
-app.get('/categories/delete/:id', (req, res) => {
+app.get('/categories/delete/:id', ensureLogin, (req, res) => {
     if(req.params.id) 
     blogData.deleteCategoryById(req.params.id).then((category) => 
     {
@@ -268,7 +294,7 @@ app.get('/categories/delete/:id', (req, res) => {
     })
 });
 
-app.get('/posts/delete/:id', (req, res) => {
+app.get('/posts/delete/:id', ensureLogin, (req, res) => {
     if(req.params.id) 
     blogData.deletePostById(req.params.id).then((category) => 
     {
@@ -328,6 +354,51 @@ app.get('/blog/:id', async (req, res) => {
     // render the "blog" view with all of the data (viewData)
     res.render("blog", {data: viewData})
 });
+
+app.get('/login', (req, res) => {
+    res.render("login"); 
+}); 
+
+app.get('/register', (req, res) => {
+    res.render("register"); 
+}); 
+    
+app.post('/register', (req, res) => {
+    authData.registerUser(req.body).then(() => 
+    {
+        res.render("register", {successMessage: "User created"});
+    }).catch((err)=>
+    {
+        res.render("register", {errorMessage: err, userName: req.body.userName} );
+    })
+}); 
+
+app.post('/login', (req, res) => {
+    req.body.userAgent = req.get('User-Agent');
+
+    authData.checkUser(req.body).then((user) => 
+    {
+        req.session.user = {
+            userName: user.userName,// authenticated user's userName
+            email: user.email, // authenticated user's email
+            loginHistory: user.loginHistory// authenticated user's loginHistory
+        }
+    
+        res.redirect('/posts');
+    }).catch((err) =>
+    {
+        res.render("login", {errorMessage: err, userName: req.body.userName} );
+    })
+});     
+
+app.get('/logout', (req, res) => {
+    req.session.reset();
+    res.redirect('/'); 
+}); 
+
+app.get('/userHistory', ensureLogin, (req, res) => {
+    res.render("userHistory");
+}); 
 
 app.get('/*', (req, res) => {
     res.render(path.join(__dirname, "/views/404")); 
